@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: spring-integration
+
+  security:
+    user:
+      name: u
+      password: p
