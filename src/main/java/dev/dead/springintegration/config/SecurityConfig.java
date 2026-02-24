@@ -3,40 +3,37 @@ package dev.dead.springintegration.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity // Use ONLY the reactive version
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+    public SecurityWebFilterChain securityWebFilterChain(
+            ServerHttpSecurity http) {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**")
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(auth -> auth
+                        .pathMatchers("/admin/**")
                         .hasRole("ADMIN")
-                        .anyRequest()
+                        .anyExchange()
                         .authenticated()
                 )
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults())
                 .build();
-
     }
 
     @Bean
@@ -45,17 +42,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+    public ReactiveUserDetailsService userDetailsService(
+            PasswordEncoder encoder) {
         List<UserDetails> usersList = new ArrayList<>();
 
-        usersList.add(new User(
-                "u", encoder.encode("p"),
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+        usersList.add(User.builder()
+                .username("u")
+                .password(encoder.encode("p"))
+                .roles("ADMIN")
+                .build());
 
-        usersList.add(new User(
-                "u2", encoder.encode("p2"),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+        usersList.add(User.builder()
+                .username("u2")
+                .password(encoder.encode("p2"))
+                .roles("USER")
+                .build());
 
-        return new InMemoryUserDetailsManager(usersList);
+        return new MapReactiveUserDetailsService(usersList);
     }
 }

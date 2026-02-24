@@ -1,6 +1,5 @@
 package dev.dead.springintegration.controllers;
 
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -17,7 +16,6 @@ public class SecurityController {
             return Mono.just("private");
         }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/test")
     public Mono<String> adminEndpoint() {
         return Mono.just("admin");
