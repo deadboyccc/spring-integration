@@ -35,7 +35,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-webclient")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.integration:spring-integration-webflux")
+    implementation("org.springframework.integration:spring-integration-file")
     implementation("org.springframework.security:spring-security-messaging")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
