@@ -1,0 +1,177 @@
+package dev.dead.springintegration;
+
+import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
+import reactor.util.function.Tuple2;
+
+import java.time.Duration;
+import java.util.stream.IntStream;
+
+public class ReactiveStreamsTest {
+
+    @Test
+    public void createFlux() {
+        Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 10)
+                .boxed());
+
+        StepVerifier.create(integerFlux)
+                .expectNext(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void CreateFluxRange() {
+        Flux<Integer> integerFlux = Flux.range(0, 10);
+
+        StepVerifier.create(integerFlux)
+                .expectNext(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void CreateFluxInterval() {
+        Flux<Long> longFlux = Flux.interval(Duration.ofMillis(100))
+                .take(10);
+
+        StepVerifier.create(longFlux)
+                .expectNext(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void mergeFluxes() {
+        Flux<String> characterFlux = Flux
+                .just("Garfield", "Kojak", "Barbossa")
+                .delayElements(Duration.ofMillis(500));
+        Flux<String> foodFlux = Flux
+                .just("Lasagna", "Lollipops", "Apples")
+                .delaySubscription(Duration.ofMillis(250))
+                .delayElements(Duration.ofMillis(500));
+        Flux<String> mergedFlux = characterFlux.mergeWith(foodFlux);
+        StepVerifier.create(mergedFlux)
+                .expectNext("Garfield")
+                .expectNext("Lasagna")
+                .expectNext("Kojak")
+                .expectNext("Lollipops")
+                .expectNext("Barbossa")
+                .expectNext("Apples")
+                .verifyComplete();
+    }
+
+    @Test
+    public void zipFluxes() {
+        Flux<String> characterFlux = Flux
+                .just("Garfield", "Kojak", "Barbossa");
+        Flux<String> foodFlux = Flux
+                .just("Lasagna", "Lollipops", "Apples");
+        Flux<Tuple2<String, String>> zippedFlux =
+                Flux.zip(characterFlux, foodFlux);
+        StepVerifier.create(zippedFlux)
+                .expectNextMatches(p ->
+                        p.getT1()
+                                .equals("Garfield") &&
+                                p.getT2()
+                                        .equals("Lasagna"))
+                .expectNextMatches(p ->
+                        p.getT1()
+                                .equals("Kojak") &&
+                                p.getT2()
+                                        .equals("Lollipops"))
+                .expectNextMatches(p ->
+                        p.getT1()
+                                .equals("Barbossa") &&
+                                p.getT2()
+                                        .equals("Apples"))
+                .verifyComplete();
+    }
+
+    @Test
+    public void zipFluxesSimple() {
+        Flux<String> characterFlux = Flux
+                .just("Garfield", "Kojak", "Barbossa");
+        Flux<String> foodFlux = Flux
+                .just("Lasagna", "Lollipops", "Apples");
+        var zipped = Flux.zip(characterFlux, foodFlux, (c, f) -> c + " eats " + f);
+        StepVerifier.create(zipped)
+                .expectNext("Garfield eats Lasagna")
+                .expectNext("Kojak eats Lollipops")
+                .expectNext("Barbossa eats Apples")
+                .verifyComplete();
+
+    }
+
+    @Test
+    public void firstWithSignalFlux() {
+        Flux<String> slowFlux = Flux.just("tortoise", "snail", "sloth")
+                .delaySubscription(Duration.ofMillis(100));
+        Flux<String> fastFlux = Flux.just("hare", "cheetah", "squirrel");
+        Flux<String> firstFlux = Flux.firstWithSignal(slowFlux, fastFlux);
+        StepVerifier.create(firstFlux)
+                .expectNext("hare")
+                .expectNext("cheetah")
+                .expectNext("squirrel")
+                .verifyComplete();
+    }
+
+    @Test
+    public void skipAFew() {
+        Flux<String> countFlux = Flux.just(
+                        "one", "two", "skip a few", "ninety nine", "one hundred")
+                .skip(3);
+        StepVerifier.create(countFlux)
+                .expectNext("ninety nine", "one hundred")
+                .verifyComplete();
+    }
+
+    @Test
+    public void skipAFewSeconds() {
+        Flux<String> countFlux = Flux.just("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+                .delayElements(Duration.ofSeconds(1))
+                .skip(Duration.ofSeconds(3));
+        StepVerifier.create(countFlux)
+                .expectNext("three", "four", "five", "six", "seven", "eight",
+                        "nine",
+                        "ten")
+                .verifyComplete();
+    }
+
+    @Test
+    void testMap() {
+        Flux<Person> personFlux = Flux.just(
+                new Person("John", "Doe"),
+                new Person("Jane", "Smith"),
+                new Person("Emily", "Johnson")
+        );
+
+        Flux<String> fullNameFlux = personFlux.map(person -> person.getFirstName() + " " + person.getLastName());
+
+        StepVerifier.create(fullNameFlux)
+                .expectNext("John Doe")
+                .expectNext("Jane Smith")
+                .expectNext("Emily Johnson")
+                .verifyComplete();
+    }
+
+    static class Person {
+        private final String firstName;
+        private final String lastName;
+
+        public Person(String firstName, String lastName) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+    }
+
+}
