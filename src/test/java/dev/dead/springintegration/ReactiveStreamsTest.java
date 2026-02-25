@@ -46,11 +46,9 @@ public class ReactiveStreamsTest {
 
     @Test
     public void mergeFluxes() {
-        Flux<String> characterFlux = Flux
-                .just("Garfield", "Kojak", "Barbossa")
+        Flux<String> characterFlux = Flux.just("Garfield", "Kojak", "Barbossa")
                 .delayElements(Duration.ofMillis(500));
-        Flux<String> foodFlux = Flux
-                .just("Lasagna", "Lollipops", "Apples")
+        Flux<String> foodFlux = Flux.just("Lasagna", "Lollipops", "Apples")
                 .delaySubscription(Duration.ofMillis(250))
                 .delayElements(Duration.ofMillis(500));
         Flux<String> mergedFlux = characterFlux.mergeWith(foodFlux);
@@ -66,37 +64,26 @@ public class ReactiveStreamsTest {
 
     @Test
     public void zipFluxes() {
-        Flux<String> characterFlux = Flux
-                .just("Garfield", "Kojak", "Barbossa");
-        Flux<String> foodFlux = Flux
-                .just("Lasagna", "Lollipops", "Apples");
-        Flux<Tuple2<String, String>> zippedFlux =
-                Flux.zip(characterFlux, foodFlux);
+        Flux<String> characterFlux = Flux.just("Garfield", "Kojak", "Barbossa");
+        Flux<String> foodFlux = Flux.just("Lasagna", "Lollipops", "Apples");
+        Flux<Tuple2<String, String>> zippedFlux = Flux.zip(characterFlux, foodFlux);
         StepVerifier.create(zippedFlux)
-                .expectNextMatches(p ->
-                        p.getT1()
-                                .equals("Garfield") &&
-                                p.getT2()
-                                        .equals("Lasagna"))
-                .expectNextMatches(p ->
-                        p.getT1()
-                                .equals("Kojak") &&
-                                p.getT2()
-                                        .equals("Lollipops"))
-                .expectNextMatches(p ->
-                        p.getT1()
-                                .equals("Barbossa") &&
-                                p.getT2()
-                                        .equals("Apples"))
+                .expectNextMatches(p -> p.getT1()
+                        .equals("Garfield") && p.getT2()
+                        .equals("Lasagna"))
+                .expectNextMatches(p -> p.getT1()
+                        .equals("Kojak") && p.getT2()
+                        .equals("Lollipops"))
+                .expectNextMatches(p -> p.getT1()
+                        .equals("Barbossa") && p.getT2()
+                        .equals("Apples"))
                 .verifyComplete();
     }
 
     @Test
     public void zipFluxesSimple() {
-        Flux<String> characterFlux = Flux
-                .just("Garfield", "Kojak", "Barbossa");
-        Flux<String> foodFlux = Flux
-                .just("Lasagna", "Lollipops", "Apples");
+        Flux<String> characterFlux = Flux.just("Garfield", "Kojak", "Barbossa");
+        Flux<String> foodFlux = Flux.just("Lasagna", "Lollipops", "Apples");
         var zipped = Flux.zip(characterFlux, foodFlux, (c, f) -> c + " eats " + f);
         StepVerifier.create(zipped)
                 .expectNext("Garfield eats Lasagna")
@@ -121,8 +108,7 @@ public class ReactiveStreamsTest {
 
     @Test
     public void skipAFew() {
-        Flux<String> countFlux = Flux.just(
-                        "one", "two", "skip a few", "ninety nine", "one hundred")
+        Flux<String> countFlux = Flux.just("one", "two", "skip a few", "ninety nine", "one hundred")
                 .skip(3);
         StepVerifier.create(countFlux)
                 .expectNext("ninety nine", "one hundred")
@@ -135,19 +121,13 @@ public class ReactiveStreamsTest {
                 .delayElements(Duration.ofSeconds(1))
                 .skip(Duration.ofSeconds(3));
         StepVerifier.create(countFlux)
-                .expectNext("three", "four", "five", "six", "seven", "eight",
-                        "nine",
-                        "ten")
+                .expectNext("three", "four", "five", "six", "seven", "eight", "nine", "ten")
                 .verifyComplete();
     }
 
     @Test
     void testMap() {
-        Flux<Person> personFlux = Flux.just(
-                new Person("John", "Doe"),
-                new Person("Jane", "Smith"),
-                new Person("Emily", "Johnson")
-        );
+        Flux<Person> personFlux = Flux.just(new Person("John", "Doe"), new Person("Jane", "Smith"), new Person("Emily", "Johnson"));
 
         Flux<String> fullNameFlux = personFlux.map(person -> person.getFirstName() + " " + person.getLastName());
 
@@ -182,8 +162,7 @@ public class ReactiveStreamsTest {
         Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
                 .boxed());
 
-        Flux<Integer> flatMappedFlux = integerFlux
-                .flatMap(i -> Mono.just(i)
+        Flux<Integer> flatMappedFlux = integerFlux.flatMap(i -> Mono.just(i)
                         .delayElement(Duration.ofSeconds(1)))
                 .subscribeOn(Schedulers.parallel());
         flatMappedFlux.subscribe(System.out::println);
@@ -199,8 +178,7 @@ public class ReactiveStreamsTest {
         Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
                 .boxed());
 
-        Flux<Integer> flatMappedFlux = integerFlux
-                .flatMapSequential(i -> Mono.just(i)
+        Flux<Integer> flatMappedFlux = integerFlux.flatMapSequential(i -> Mono.just(i)
                         .delayElement(Duration.ofSeconds(3)))
                 .subscribeOn(Schedulers.parallel());
         flatMappedFlux.subscribe(System.out::println);
@@ -214,15 +192,29 @@ public class ReactiveStreamsTest {
         Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
                 .boxed());
 
-        Flux<Integer> flatMappedFlux = integerFlux
-                .flatMap(i -> Mono.just(i)
+        Flux<Integer> flatMappedFlux = integerFlux.flatMap(i -> Mono.just(i)
                         .delayElement(Duration.ofSeconds(3)))
                 .subscribeOn(Schedulers.parallel());
-        flatMappedFlux.subscribe(
-                i -> System.out.println("Received: " + i + " on thread " + Thread.currentThread()
-                        .getName())
-        );
+        flatMappedFlux.subscribe(i -> System.out.println("Received: " + i + " on thread " + Thread.currentThread()
+                .getName()));
 
         Thread.sleep(3000);
+    }
+
+    @Test
+    void testFlatMapToParallelOrdered() throws InterruptedException {
+
+        System.out.println("Main Thread: " + Thread.currentThread()
+                .getName());
+        Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 10)
+                .boxed());
+
+        Flux<Integer> flatMappedFlux = integerFlux.flatMap(i -> Mono.just(i)
+                        .delayElement(Duration.ofSeconds(3)))
+                .subscribeOn(Schedulers.boundedElastic());
+        flatMappedFlux.subscribe(i -> System.out.println("Received: " + i + " on thread " + Thread.currentThread()
+                .getName()));
+
+        Thread.sleep(8000);
     }
 }
