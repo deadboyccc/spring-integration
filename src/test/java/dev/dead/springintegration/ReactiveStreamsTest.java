@@ -2,6 +2,8 @@ package dev.dead.springintegration;
 
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuple2;
 
@@ -174,4 +176,53 @@ public class ReactiveStreamsTest {
         }
     }
 
+    @Test
+    void testFlatMap() throws InterruptedException {
+
+        Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
+                .boxed());
+
+        Flux<Integer> flatMappedFlux = integerFlux
+                .flatMap(i -> Mono.just(i)
+                        .delayElement(Duration.ofSeconds(1)))
+                .subscribeOn(Schedulers.parallel());
+        flatMappedFlux.subscribe(System.out::println);
+
+        Thread.sleep(5000);
+
+
+    }
+
+    @Test
+    void testFlatMapSequential() throws InterruptedException {
+
+        Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
+                .boxed());
+
+        Flux<Integer> flatMappedFlux = integerFlux
+                .flatMapSequential(i -> Mono.just(i)
+                        .delayElement(Duration.ofSeconds(3)))
+                .subscribeOn(Schedulers.parallel());
+        flatMappedFlux.subscribe(System.out::println);
+
+        Thread.sleep(3000);
+    }
+
+    @Test
+    void testFlatMapToParallel() throws InterruptedException {
+
+        Flux<Integer> integerFlux = Flux.fromStream(IntStream.range(0, 5)
+                .boxed());
+
+        Flux<Integer> flatMappedFlux = integerFlux
+                .flatMap(i -> Mono.just(i)
+                        .delayElement(Duration.ofSeconds(3)))
+                .subscribeOn(Schedulers.parallel());
+        flatMappedFlux.subscribe(
+                i -> System.out.println("Received: " + i + " on thread " + Thread.currentThread()
+                        .getName())
+        );
+
+        Thread.sleep(3000);
+    }
 }
