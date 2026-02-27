@@ -13,7 +13,7 @@ public class FileWriterSender {
 
     private final MessageChannel textInChannel;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 3000000)
     public void sendText() {
         String payload = "Message sent at: " + System.currentTimeMillis();
 

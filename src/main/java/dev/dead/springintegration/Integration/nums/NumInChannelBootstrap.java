@@ -12,7 +12,7 @@ public class NumInChannelBootstrap {
 
     private final NumberFileWriterGateway numberFileWriterGateway;
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 100000)
     public void sendNumbersToFile() {
         var numbers = IntStream.rangeClosed(1, 30)
                 .map(i -> (int) (Math.random() * 100_000) + 1)
