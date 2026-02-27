@@ -6,9 +6,7 @@ import org.springframework.messaging.handler.annotation.Header;
 
 @MessagingGateway(defaultRequestChannel = "numInChannel")
 public interface NumberFileWriter {
-    void writeToFile(
-            @Header(FileHeaders.FILENAME) String filename,
-            String data);
+
 
     void writeNumbersToFile(@Header(FileHeaders.FILENAME) String fileName,
                             Integer... numbers);
