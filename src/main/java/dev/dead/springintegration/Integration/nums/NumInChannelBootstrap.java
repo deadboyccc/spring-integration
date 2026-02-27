@@ -4,16 +4,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.stream.IntStream;
+
 @Component
 @RequiredArgsConstructor
 public class NumInChannelBootstrap {
 
-    private final NumberFileWriter numberFileWriter;
+    private final NumberFileWriterGateway numberFileWriterGateway;
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedRate = 1000)
     public void sendNumbersToFile() {
-        Integer[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        numberFileWriter.writeNumbersToFile("numbers.txt", numbers);
+        var numbers = IntStream.rangeClosed(1, 30)
+                .map(i -> (int) (Math.random() * 100_000) + 1)
+                .boxed()
+                .toArray(Integer[]::new);
+        numberFileWriterGateway.writeNumbersToFile("numbers.txt", numbers);
     }
 
 }
