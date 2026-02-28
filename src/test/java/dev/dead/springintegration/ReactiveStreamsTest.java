@@ -8,6 +8,9 @@ import reactor.test.StepVerifier;
 import reactor.util.function.Tuple2;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 public class ReactiveStreamsTest {
@@ -216,5 +219,134 @@ public class ReactiveStreamsTest {
                 .getName()));
 
         Thread.sleep(8000);
+    }
+
+    @Test
+    public void testFluxBuffering() {
+        Flux<String> fruitFlux = Flux.just(
+                "apple", "orange", "banana", "kiwi", "strawberry");
+        Flux<List<String>> bufferedFlux = fruitFlux.buffer(3);
+        StepVerifier
+                .create(bufferedFlux)
+                .expectNext(Arrays.asList("apple", "orange", "banana"))
+                .expectNext(Arrays.asList("kiwi", "strawberry"))
+                .verifyComplete();
+    }
+
+    @Test
+    public void bufferAndFlatMap() throws Exception {
+        Flux.just(
+                        "apple", "orange", "banana", "kiwi", "strawberry")
+                .buffer(3)
+                // Process each buffer in parallel and flatten the results
+                // back into a single Flux
+                .flatMap(x ->
+                                Flux.fromIterable(x)
+                                        .map(String::toUpperCase)
+                                        .subscribeOn(Schedulers.parallel())
+//                                .log()
+                                        .doOnNext(s -> System.out.println("Received: " + s + " on thread " + Thread.currentThread()))
+
+                )
+                .subscribe();
+
+    }
+
+    @Test
+    public void collectList() {
+        Flux<String> fruitFlux = Flux.just(
+                "apple", "orange", "banana", "kiwi", "strawberry");
+        Mono<List<String>> fruitListMono = fruitFlux.collectList();
+        StepVerifier
+                .create(fruitListMono)
+                .expectNext(Arrays.asList(
+                        "apple", "orange", "banana", "kiwi", "strawberry"))
+                .verifyComplete();
+    }
+
+    @Test
+    public void collectMap() {
+        Flux<String> animalFlux = Flux.just(
+                "aardvark", "elephant", "koala", "eagle", "kangaroo");
+        Mono<Map<Character, String>> animalMapMono =
+                animalFlux.collectMap(a -> a.charAt(0));
+
+
+        // Verify that the resulting map contains the expected key-value pairs
+        StepVerifier
+                .create(animalMapMono)
+                .expectNextMatches(map -> map.size() == 3 &&
+                        map.get('a')
+                                .equals("aardvark") &&
+                        map.get('e')
+                                .equals("eagle") &&
+                        map.get('k')
+                                .equals("kangaroo"))
+                .verifyComplete();
+    }
+
+    @Test
+    public void all() {
+        Flux<String> animalFlux = Flux.just(
+                "aardvark", "elephant", "koala", "eagle", "kangaroo");
+        Mono<Boolean> hasAMono = animalFlux.all(a -> a.contains("a"));
+        StepVerifier.create(hasAMono)
+                .expectNext(true)
+                .verifyComplete();
+        Mono<Boolean> hasKMono = animalFlux.all(a -> a.contains("k"));
+        StepVerifier.create(hasKMono)
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    public void any() {
+        Flux<String> animalFlux = Flux.just(
+                "aardvark", "elephant", "koala", "eagle", "kangaroo");
+        Mono<Boolean> hasAMono = animalFlux.any(a -> a.contains("a"));
+        StepVerifier.create(hasAMono)
+                .expectNext(true)
+                .verifyComplete();
+        Mono<Boolean> hasZMono = animalFlux.any(a -> a.contains("z"));
+        StepVerifier.create(hasZMono)
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    public void doOnNextDemo() {
+        Flux<String> animalFlux = Flux.just(
+                "aardvark", "elephant", "koala", "eagle", "kangaroo");
+        animalFlux
+                .doOnNext(a -> System.out.println("Processing: " + a))
+                .map(String::toUpperCase)
+                .subscribe(a -> System.out.println("Received: " + a));
+    }
+
+    @Test
+    public void doOnErrorDemo() {
+        Flux<String> animalFlux = Flux.just(
+                        "aardvark", "elephant", "koala", "eagle", "kangaroo")
+                .map(a -> {
+                    if (a.startsWith("k")) {
+                        throw new RuntimeException("Error processing: " + a);
+                    }
+                    return a.toUpperCase();
+                })
+                .doOnError(e -> System.err.println("Caught error: " + e.getMessage()));
+        animalFlux.subscribe(
+                a -> System.out.println("Received: " + a),
+                e -> System.err.println("Subscription error: " + e.getMessage())
+        );
+    }
+
+    @Test
+    public void logReactiveStream() {
+        Flux<String> animalFlux = Flux.just(
+                        "aardvark", "elephant", "koala", "eagle", "kangaroo")
+                .log();
+        StepVerifier.create(animalFlux)
+                .expectNext("aardvark", "elephant", "koala", "eagle", "kangaroo")
+                .verifyComplete();
     }
 }
